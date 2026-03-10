@@ -4,3 +4,5 @@ pydantic==2.5.2
 python-multipart==0.0.6
 pypdf==3.17.1
 sentence-transformers==2.2.2
+numpy==1.26.2
+faiss-cpu==1.7.4

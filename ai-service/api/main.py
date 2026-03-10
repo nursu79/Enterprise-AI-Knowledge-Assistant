@@ -5,9 +5,11 @@ import uuid
 from .models import QueryRequest, QueryResponse, IngestResponse
 from rag.document_processor import DocumentProcessor
 from embeddings.generator import EmbeddingGenerator
+from retrieval.faiss_store import FAISSStore
 
 processor = DocumentProcessor(chunk_size=1000, chunk_overlap=200)
 embedder = EmbeddingGenerator()
+vector_store = FAISSStore()
 
 app = FastAPI(
     title="Enterprise AI Knowledge Assistant",
@@ -28,11 +30,12 @@ async def ingest_document(file: UploadFile = File(...)):
     try:
         chunks = processor.process_file(content, file.filename)
         embeddings = embedder.generate_embeddings(chunks)
+        vector_store.add_embeddings(embeddings, chunks)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
         
     doc_id = str(uuid.uuid4())
-    # TODO: store chunks and embeddings into FAISS
+
     
     return IngestResponse(
         status="success",
@@ -42,8 +45,16 @@ async def ingest_document(file: UploadFile = File(...)):
 
 @app.post("/query", response_model=QueryResponse)
 async def query_assistant(request: QueryRequest):
-    # Placeholder for RAG pipeline logic
+    try:
+        query_embedding = embedder.generate_embeddings([request.query])[0]
+        results = vector_store.search(query_embedding, request.top_k)
+        
+        context = [chunk for chunk, _score in results]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during retrieval: {str(e)}")
+        
+    # Placeholder for LLM generation
     return QueryResponse(
-        answer="This is a placeholder answer.",
-        context=["Placeholder context chunk 1", "Placeholder context chunk 2"]
+        answer="This is a placeholder answer. Ensure RAG LLM pipeline processes context.",
+        context=context
     )
