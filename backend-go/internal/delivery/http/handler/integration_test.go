@@ -84,7 +84,9 @@ func prepareTestApp(t *testing.T) (*postgres.PostgresContainer, *httptest.Server
 	userHandler := handler.NewUserHandler(userUc)
 	adminHandler := handler.NewAdminHandler(userUc)
 
-	router := deliveryHttp.NewRouter(dbPool, nil, userHandler, adminHandler, cfg)
+	aiHandler := handler.NewAIHandler(cfg)
+
+	router := deliveryHttp.NewRouter(dbPool, nil, userHandler, adminHandler, aiHandler, cfg)
 	server := httptest.NewServer(router)
 
 	return pgContainer, server

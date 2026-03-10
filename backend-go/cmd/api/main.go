@@ -54,9 +54,10 @@ func main() {
 	userUsecase := usecase.NewUserUsecase(userRepo, redisClient, cfg.JwtSecret, cfg.JwtRefreshSecret)
 	userHandler := handler.NewUserHandler(userUsecase)
 	adminHandler := handler.NewAdminHandler(userUsecase)
+	aiHandler := handler.NewAIHandler(cfg)
 
 	// Initialize routing
-	router := deliveryHttp.NewRouter(dbPool, redisClient, userHandler, adminHandler, cfg)
+	router := deliveryHttp.NewRouter(dbPool, redisClient, userHandler, adminHandler, aiHandler, cfg)
 
 	// Configure HTTP server
 	srv := &http.Server{

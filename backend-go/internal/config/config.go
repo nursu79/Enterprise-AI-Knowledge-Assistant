@@ -19,6 +19,7 @@ type Config struct {
 	RedisPort        string   `env:"REDIS_PORT" envDefault:"6379"`
 	RedisPassword    string   `env:"REDIS_PASSWORD" envDefault:""`
 	RedisUrl         string   `env:"REDIS_URL" envDefault:""`
+	AIServiceUrl     string   `env:"AI_SERVICE_URL" envDefault:"http://localhost:8000"`
 }
 
 // String explicitly masks secrets ensuring configuration dumps never leak sensitive properties into structured logs safely.

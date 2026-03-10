@@ -13,7 +13,7 @@ import (
 )
 
 // NewRouter initializes and configures the standard chi router mapping explicitly rigid chains strictly.
-func NewRouter(dbPool *pgxpool.Pool, redisClient *redis.Client, userHandler *handler.UserHandler, adminHandler *handler.AdminHandler, cfg *config.Config) *chi.Mux {
+func NewRouter(dbPool *pgxpool.Pool, redisClient *redis.Client, userHandler *handler.UserHandler, adminHandler *handler.AdminHandler, aiHandler *handler.AIHandler, cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
 
 	// 1. Context Hooks
@@ -59,6 +59,11 @@ func NewRouter(dbPool *pgxpool.Pool, redisClient *redis.Client, userHandler *han
 
 			r.Get("/users", adminHandler.GetAllUsers)
 			r.Delete("/users/{id}", adminHandler.DeleteUser)
+		})
+
+		r.Route("/ai", func(r chi.Router) {
+			r.Use(authMiddleware.JWTMiddleware(cfg.JwtSecret, redisClient))
+			aiHandler.RegisterRoutes(r)
 		})
 	})
 
