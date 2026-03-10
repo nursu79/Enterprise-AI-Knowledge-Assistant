@@ -13,6 +13,7 @@ import (
 	"github.com/nursu79/go-production-api/internal/config"
 	"github.com/nursu79/go-production-api/internal/delivery/http/response"
 	"github.com/nursu79/go-production-api/internal/domain"
+	"github.com/nursu79/go-production-api/internal/infrastructure/redis"
 	"github.com/nursu79/go-production-api/internal/usecase"
 )
 
@@ -20,15 +21,17 @@ type AIHandler struct {
 	cfg        *config.Config
 	httpClient *http.Client
 	usecase    usecase.ChatHistoryUsecase
+	redis      *redis.Client
 }
 
-func NewAIHandler(cfg *config.Config, uc usecase.ChatHistoryUsecase) *AIHandler {
+func NewAIHandler(cfg *config.Config, uc usecase.ChatHistoryUsecase, r *redis.Client) *AIHandler {
 	return &AIHandler{
 		cfg: cfg,
 		httpClient: &http.Client{
 			Timeout: 60 * time.Second, // 60s timeout for LLM / file upload tasks!
 		},
 		usecase: uc,
+		redis:   r,
 	}
 }
 
@@ -99,6 +102,21 @@ func (h *AIHandler) QueryAssistant(w http.ResponseWriter, r *http.Request) {
 	// We ignore the error just in case, but keep what we can
 	json.Unmarshal(reqBody, &userReq)
 
+	// Check Redis Cache
+	var cacheKey string
+	if h.redis != nil && h.redis.Client != nil && userReq.Query != "" {
+		// Use a simple hash or directly the query as key (hash is safer for special chars)
+		cacheKey = "ai:query:" + userReq.Query
+		cachedResp, err := h.redis.Client.Get(r.Context(), cacheKey).Result()
+		if err == nil && cachedResp != "" {
+			var cachedResult map[string]interface{}
+			if err := json.Unmarshal([]byte(cachedResp), &cachedResult); err == nil {
+				response.RespondJSON(w, http.StatusOK, cachedResult)
+				return // Cache HIT!
+			}
+		}
+	}
+
 	// Recreate proxy request
 	proxyReq, err := http.NewRequest("POST", h.cfg.AIServiceUrl+"/query", bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -143,6 +161,11 @@ func (h *AIHandler) QueryAssistant(w http.ResponseWriter, r *http.Request) {
 	// Send back to client
 	var originalResult map[string]interface{}
 	json.Unmarshal(respBody, &originalResult)
+
+	// Save to Redis Cache (TTL: 1 hour)
+	if h.redis != nil && h.redis.Client != nil && cacheKey != "" {
+		h.redis.Client.Set(r.Context(), cacheKey, string(respBody), time.Hour)
+	}
 
 	response.RespondJSON(w, resp.StatusCode, originalResult)
 }

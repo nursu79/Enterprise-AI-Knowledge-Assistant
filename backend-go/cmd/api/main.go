@@ -57,7 +57,7 @@ func main() {
 
 	userHandler := handler.NewUserHandler(userUsecase)
 	adminHandler := handler.NewAdminHandler(userUsecase)
-	aiHandler := handler.NewAIHandler(cfg, chatHistoryUsecase)
+	aiHandler := handler.NewAIHandler(cfg, chatHistoryUsecase, redisClient)
 
 	// Initialize routing
 	router := deliveryHttp.NewRouter(dbPool, redisClient, userHandler, adminHandler, aiHandler, cfg)

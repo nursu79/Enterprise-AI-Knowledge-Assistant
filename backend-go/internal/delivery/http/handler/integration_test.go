@@ -86,7 +86,7 @@ func prepareTestApp(t *testing.T) (*postgres.PostgresContainer, *httptest.Server
 
 	userHandler := handler.NewUserHandler(userUc)
 	adminHandler := handler.NewAdminHandler(userUc)
-	aiHandler := handler.NewAIHandler(cfg, chatHistoryUc)
+	aiHandler := handler.NewAIHandler(cfg, chatHistoryUc, nil) // Nil redis for basic component tests unless mocked
 
 	router := deliveryHttp.NewRouter(dbPool, nil, userHandler, adminHandler, aiHandler, cfg)
 	server := httptest.NewServer(router)
