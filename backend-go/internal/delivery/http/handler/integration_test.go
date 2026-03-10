@@ -81,10 +81,12 @@ func prepareTestApp(t *testing.T) (*postgres.PostgresContainer, *httptest.Server
 
 	userRepo := repository.NewUserRepository(dbPool)
 	userUc := usecase.NewUserUsecase(userRepo, nil, cfg.JwtSecret, cfg.JwtRefreshSecret)
+	chatHistoryRepo := repository.NewChatHistoryRepository(dbPool)
+	chatHistoryUc := usecase.NewChatHistoryUsecase(chatHistoryRepo)
+
 	userHandler := handler.NewUserHandler(userUc)
 	adminHandler := handler.NewAdminHandler(userUc)
-
-	aiHandler := handler.NewAIHandler(cfg)
+	aiHandler := handler.NewAIHandler(cfg, chatHistoryUc)
 
 	router := deliveryHttp.NewRouter(dbPool, nil, userHandler, adminHandler, aiHandler, cfg)
 	server := httptest.NewServer(router)

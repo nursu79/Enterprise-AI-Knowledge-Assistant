@@ -52,9 +52,12 @@ func main() {
 
 	userRepo := repository.NewUserRepository(dbPool)
 	userUsecase := usecase.NewUserUsecase(userRepo, redisClient, cfg.JwtSecret, cfg.JwtRefreshSecret)
+	chatHistoryRepo := repository.NewChatHistoryRepository(dbPool)
+	chatHistoryUsecase := usecase.NewChatHistoryUsecase(chatHistoryRepo)
+
 	userHandler := handler.NewUserHandler(userUsecase)
 	adminHandler := handler.NewAdminHandler(userUsecase)
-	aiHandler := handler.NewAIHandler(cfg)
+	aiHandler := handler.NewAIHandler(cfg, chatHistoryUsecase)
 
 	// Initialize routing
 	router := deliveryHttp.NewRouter(dbPool, redisClient, userHandler, adminHandler, aiHandler, cfg)

@@ -11,8 +11,10 @@ import (
 )
 
 type Querier interface {
+	CreateChatHistory(ctx context.Context, arg CreateChatHistoryParams) (ChatHistory, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	GetAllUsers(ctx context.Context) ([]User, error)
+	GetChatHistoryByUserID(ctx context.Context, arg GetChatHistoryByUserIDParams) ([]ChatHistory, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	SoftDeleteUser(ctx context.Context, id pgtype.UUID) error
