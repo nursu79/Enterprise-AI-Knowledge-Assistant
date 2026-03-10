@@ -4,8 +4,10 @@ import uuid
 
 from .models import QueryRequest, QueryResponse, IngestResponse
 from rag.document_processor import DocumentProcessor
+from embeddings.generator import EmbeddingGenerator
 
 processor = DocumentProcessor(chunk_size=1000, chunk_overlap=200)
+embedder = EmbeddingGenerator()
 
 app = FastAPI(
     title="Enterprise AI Knowledge Assistant",
@@ -25,15 +27,16 @@ async def ingest_document(file: UploadFile = File(...)):
     content = await file.read()
     try:
         chunks = processor.process_file(content, file.filename)
+        embeddings = embedder.generate_embeddings(chunks)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
         
     doc_id = str(uuid.uuid4())
-    # TODO: generate embeddings and store into FAISS
+    # TODO: store chunks and embeddings into FAISS
     
     return IngestResponse(
         status="success",
-        message=f"Document {file.filename} ingested and split into {len(chunks)} chunks",
+        message=f"Document {file.filename} ingested, split into {len(chunks)} chunks, and {len(embeddings)} embeddings generated",
         document_id=doc_id
     )
 
