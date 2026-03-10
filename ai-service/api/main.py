@@ -6,10 +6,12 @@ from .models import QueryRequest, QueryResponse, IngestResponse
 from rag.document_processor import DocumentProcessor
 from embeddings.generator import EmbeddingGenerator
 from retrieval.faiss_store import FAISSStore
+from rag.llm import LLMGenerator
 
 processor = DocumentProcessor(chunk_size=1000, chunk_overlap=200)
 embedder = EmbeddingGenerator()
 vector_store = FAISSStore()
+llm_generator = LLMGenerator()
 
 app = FastAPI(
     title="Enterprise AI Knowledge Assistant",
@@ -50,11 +52,13 @@ async def query_assistant(request: QueryRequest):
         results = vector_store.search(query_embedding, request.top_k)
         
         context = [chunk for chunk, _score in results]
+        
+        answer = llm_generator.generate_answer(request.query, context)
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during retrieval: {str(e)}")
         
-    # Placeholder for LLM generation
     return QueryResponse(
-        answer="This is a placeholder answer. Ensure RAG LLM pipeline processes context.",
+        answer=answer,
         context=context
     )
